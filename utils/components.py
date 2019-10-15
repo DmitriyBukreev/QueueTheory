@@ -75,7 +75,7 @@ class Model:
         self._finish_func = None
         
     def step():
-        self._future_events_list.get().handler.call(future_events_list)
+        self._future_events_list.get()[1].handler.call(future_events_list)
     
     def iteration():
         while self.finish_func() == True:
