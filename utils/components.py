@@ -42,24 +42,21 @@ class Handler:
     TAKE = True
     FREE = False
 
-    def __init__(self, action, resource: Resource, queue: Queue = None):
-        self._action = action
-        self._resource = resource
-        self._queue = queue
+    def __init__(self, func, args_list = []):
+        self._function = func
+        self._args_list = args_list
 
-    def _take_resource(self):
-        if self._resource.busy and self._queue:
-            pass
-
-    def _free_resource(self):
-        if self._resource.busy and self._queue:
-            self._queue.put()
-
-    def __call__(self):
-        if self._action == self.TAKE:
-            self._take_resource()
+    def _take_resource(resource, transact, queue = None):
+        if resource.busy:
+            if queue:
+                queue.put(transact)
+            else:
+                return transact
         else:
-            self._free_resource()
+            resource.act(TAKE)
+
+    def __call__(self, future_events_list):
+        self._function(future_events_list, self._args_list)
 
 
 class Event:
@@ -69,6 +66,18 @@ class Event:
 
 
 class Model:
-    pass
-
+    def __init__(self, queues, resources, handlers, parameters, first_event, finish_func):
+        self._queues = queues
+        self._resources = resources
+        self._handlers = handlers
+        self._parameters = parameters
+        self._future_events_list = FutureEventsList(first_event)
+        self._finish_func = None
+        
+    def step():
+        self._future_events_list.get().handler.call(future_events_list)
+    
+    def iteration():
+        while self.finish_func() == True:
+            self.step()
 
