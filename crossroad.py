@@ -11,9 +11,9 @@ def switch_phase():
     
     if Crossroad.phase == Crossroad.GREEN:
         list.put(0, Event('Car go', car_go_handler))
-        log_event('Фаза переключилась на зеленый')
+        log_event('Фаза переключилась на зеленый\n')
     else:
-        log_event('Фаза переключилась на красный')
+        log_event('Фаза переключилась на красный\n')
     
 def new_car():
 
@@ -35,8 +35,15 @@ def new_car():
 
 def car_go():
 
-    if (Car.queue_length/Car.speed) > (Crossroad.switch_time - list.time):
-        Car.queue_length = 0
+    t = Crossroad.switch_time - list.time
+    
+    if t < Car.acceleration_time:
+        acceleration_distance = ((Car.speed/Car.acceleration_time) * (t ** 2))/ 2
+    else:
+        acceleration_distance = ((Car.speed * Car.acceleration_time)/ 2) + (Car.speed * (t - Car.acceleration_time))
+        
+    if acceleration_distance < Car.distance_from_cross:
+        Car.distance_from_cross = 0
         log_event('Машина не успела выехать')
         return
 
@@ -44,10 +51,10 @@ def car_go():
         Handler.queue -= 1
         
         if Car.delay < (Crossroad.switch_time - list.time):
-            Car.queue_length += Car.length
+            Car.distance_from_cross += Car.length
             list.put(Car.delay, Event('Car go', car_go_handler))
         else:
-            Car.queue_length = 0
+            Car.distance_from_cross = 0
             
         log_event('Машина выехала. Сзади еще')
     else:
@@ -69,9 +76,13 @@ class Crossroad:
     
 class Car:
     delay = 2
-    length = 3
-    speed = 10 #m/s
-    queue_length = 0
+    length = 4
+    speed = 17 #m/s
+    acceleration_time = 5 #s
+    distance_from_cross = 0
+    
+    def __init__(self, time):
+        self.time = time
 
 Handler.intensity = 4
 Handler.queue = 0
@@ -88,7 +99,7 @@ list = FutureEventsList((Crossroad.switch_time, Event('Phase switch', phase_swit
 list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
 
 
-while list.time < 100:
+while list.time < 1000:
     list.get().handler._function()
 
 log.close
