@@ -32,6 +32,7 @@ def new_car():
                 first_car.car = Car(list.time)
                 log_event('Машина встала на красный')
         else:
+            Car.count_green_car()
             log_event('Машина проехала свободно')
 
 def car_go():
@@ -87,10 +88,14 @@ class Car:
     acceleration_time = 5 #s
     
     counter = 0
+    green_counter = 0
     sum_time = 0
     
     def __init__(self, time):
         self.time = time
+        
+    def count_green_car():
+        Car.green_counter += 1
         
     def count_car(self):
         Car.sum_time += (list.time - self.time)
@@ -98,12 +103,19 @@ class Car:
         
     def get_avg_queue_time():
         return Car.sum_time/Car.counter
+        
+    def get_avg_time_with_greens():
+        return Car.sum_time/(Car.counter + Car.green_counter)
+    
+    def get_avg_time_with_acceleration():
+        return (Car.sum_time + (2 * Car.acceleration_time * Car.counter))/(Car.counter + Car.green_counter)
+        
 
 Handler.intensity = 4
 
 log = open('log.txt', 'w')
 
-for i in range(10000):
+for i in range(1000):
 
     first_car = Resource('First car')
     first_car.distance_from_cross = 0
@@ -119,7 +131,10 @@ for i in range(10000):
     while list.time < 1000:
         list.get().handler._function()
 
-    log.write('Машин:' + str(Car.counter) + '. Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()))
+    log.write('Машин:' + str(Car.counter) + '\n')
+    log.write('Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()) + '\n')
+    log.write('С учетом проехавших свободно ' + str(Car.get_avg_time_with_greens()) + '\n')
+    log.write('С учетом разгона и торможения ' + str(Car.get_avg_time_with_acceleration()) + '\n\n')
     
     Crossroad.switch_time = Crossroad.phase_time
 
