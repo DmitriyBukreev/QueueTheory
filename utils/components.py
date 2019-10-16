@@ -4,12 +4,19 @@ from queue import Queue
 class FutureEventsList:
     def __init__(self, first=None):
         self._events = [first]
+        self._time = 0
+        
+    @property
+    def time(self):
+        return self._time
 
     def put(self, time: int, event):
-        heapq.heappush(self._events, (time, event))
+        heapq.heappush(self._events, (self._time + time, event))
 
     def get(self):
-        return heapq.heappop(self._events)
+        event = heapq.heappop(self._events)
+        self._time = event[0]
+        return event[1]
 
 
 class ResourceException(Exception):
