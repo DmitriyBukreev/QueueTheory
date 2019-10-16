@@ -6,10 +6,10 @@ import random
 def switch_phase():
 
     Crossroad.phase = not Crossroad.phase
-    Crossroad.switch_time = list.time + Crossroad.phase_time
-    list.put(Crossroad.phase_time, Event('Phase switch', phase_switch_handler))
+    Crossroad.switch_time = list.time + Crossroad.phase_time()
+    list.put(Crossroad.phase_time(), Event('Phase switch', phase_switch_handler))
     
-    if Crossroad.phase == Crossroad.GREEN:
+    if Crossroad.is_green():
         list.put(0, Event('Car go', car_go_handler))
         log_event('Фаза переключилась на зеленый\n')
     else:
@@ -23,7 +23,7 @@ def new_car():
         first_car.queue.put(Car(list.time))
         log_event('Машина встала в очередь')
     else:
-        if Crossroad.phase == Crossroad.RED:
+        if not Crossroad.is_green():
             if first_car.busy:
                 first_car.queue.put(Car(list.time))
                 log_event('Машина встала в очередь на красный')
@@ -78,8 +78,18 @@ class Crossroad:
     GREEN = True
     RED = False
     phase = RED
-    phase_time = 20
-    switch_time = phase_time
+    red_phase_time = 20
+    green_phase_time = 20
+    switch_time = red_phase_time
+    
+    def is_green():
+        return Crossroad.phase
+        
+    def phase_time():
+        if Crossroad.phase:
+            return Crossroad.green_phase_time
+        else:
+            return Crossroad.red_phase_time
     
 class Car:
     delay = 1
@@ -131,11 +141,11 @@ for i in range(1000):
     while list.time < 1000:
         list.get().handler._function()
 
-    log.write('Машин:' + str(Car.counter) + '\n')
+    log.write('\nМашин:' + str(Car.counter) + '\n')
     log.write('Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()) + '\n')
     log.write('С учетом проехавших свободно ' + str(Car.get_avg_time_with_greens()) + '\n')
     log.write('С учетом разгона и торможения ' + str(Car.get_avg_time_with_acceleration()) + '\n\n')
     
-    Crossroad.switch_time = Crossroad.phase_time
+    Crossroad.switch_time = Crossroad.phase_time()
 
 log.close
