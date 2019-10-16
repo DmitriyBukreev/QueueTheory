@@ -101,22 +101,26 @@ class Car:
 
 Handler.intensity = 4
 
-first_car = Resource('First car')
-first_car.distance_from_cross = 0
-first_car.queue = Queue()
-
 log = open('log.txt', 'w')
 
-phase_switch_handler = Handler(switch_phase)
-new_car_handler = Handler(new_car)
-car_go_handler = Handler(car_go)
+for i in range(10000):
 
-list = FutureEventsList((Crossroad.switch_time, Event('Phase switch', phase_switch_handler)))
-list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
+    first_car = Resource('First car')
+    first_car.distance_from_cross = 0
+    first_car.queue = Queue()
 
+    phase_switch_handler = Handler(switch_phase)
+    new_car_handler = Handler(new_car)
+    car_go_handler = Handler(car_go)
 
-while list.time < 1000:
-    list.get().handler._function()
+    list = FutureEventsList((Crossroad.switch_time, Event('Phase switch', phase_switch_handler)))
+    list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
 
-log.write('Машин:' + str(Car.counter) + '. Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()))
+    while list.time < 1000:
+        list.get().handler._function()
+
+    log.write('Машин:' + str(Car.counter) + '. Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()))
+    
+    Crossroad.switch_time = Crossroad.phase_time
+
 log.close
