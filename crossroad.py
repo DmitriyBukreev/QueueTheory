@@ -20,20 +20,24 @@ def new_car():
     list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
     
     if first_car.busy:
-        Handler.queue += 1
+        first_car.queue.put(Car(list.time))
         log_event('Машина встала в очередь')
     else:
         if Crossroad.phase == Crossroad.RED:
             if first_car.busy:
-                Handler.queue += 1
+                first_car.queue.put(Car(list.time))
                 log_event('Машина встала в очередь на красный')
             else:
                 first_car.act(Handler.TAKE)
+                first_car.car = Car(list.time)
                 log_event('Машина встала на красный')
         else:
             log_event('Машина проехала свободно')
 
 def car_go():
+
+    if not first_car.busy:
+        return
 
     t = Crossroad.switch_time - list.time
     
@@ -42,19 +46,21 @@ def car_go():
     else:
         acceleration_distance = ((Car.speed * Car.acceleration_time)/ 2) + (Car.speed * (t - Car.acceleration_time))
         
-    if acceleration_distance < Car.distance_from_cross:
-        Car.distance_from_cross = 0
+    if acceleration_distance < first_car.distance_from_cross:
+        first_car.distance_from_cross = 0
         log_event('Машина не успела выехать')
         return
 
-    if Handler.queue > 0:
-        Handler.queue -= 1
+    first_car.car.count_car()
+
+    if not first_car.queue.empty():
+        first_car.car = first_car.queue.get()
         
         if Car.delay < (Crossroad.switch_time - list.time):
-            Car.distance_from_cross += Car.length
+            first_car.distance_from_cross += Car.length
             list.put(Car.delay, Event('Car go', car_go_handler))
         else:
-            Car.distance_from_cross = 0
+            first_car.distance_from_cross = 0
             
         log_event('Машина выехала. Сзади еще')
     else:
@@ -75,19 +81,29 @@ class Crossroad:
     switch_time = phase_time
     
 class Car:
-    delay = 2
+    delay = 1
     length = 4
     speed = 17 #m/s
     acceleration_time = 5 #s
-    distance_from_cross = 0
+    
+    counter = 0
+    sum_time = 0
     
     def __init__(self, time):
         self.time = time
+        
+    def count_car(self):
+        Car.sum_time += (list.time - self.time)
+        Car.counter += 1
+        
+    def get_avg_queue_time():
+        return Car.sum_time/Car.counter
 
 Handler.intensity = 4
-Handler.queue = 0
 
 first_car = Resource('First car')
+first_car.distance_from_cross = 0
+first_car.queue = Queue()
 
 log = open('log.txt', 'w')
 
@@ -102,4 +118,5 @@ list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
 while list.time < 1000:
     list.get().handler._function()
 
+log.write('Машин:' + str(Car.counter) + '. Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()))
 log.close
