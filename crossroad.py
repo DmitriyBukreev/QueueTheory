@@ -49,7 +49,7 @@ def car_go():
         
     if acceleration_distance < first_car.distance_from_cross:
         first_car.distance_from_cross = 0
-        log_event('Машина не успела выехать')
+        log_event('Машина не успела выехать до красного')
         return
 
     first_car.car.count_car()
@@ -63,13 +63,19 @@ def car_go():
         else:
             first_car.distance_from_cross = 0
             
-        log_event('Машина выехала. Сзади еще')
+        log_event('Машина выехала. Есть еще')
     else:
         first_car.act(Handler.FREE)
-        log_event('Машина выехала. Сзади свободно')
+        log_event('Последняя машина выехала. Свободно')
   
 def log_event(text):
-    log.write(str(int(events_list.time)) + ': ' + text + '\n')
+    log.write(f'Время {int(events_list.time):4} - машин стоит {how_many_cars():2} - событие: {text}\n')
+    
+def how_many_cars():
+    if first_car.busy:
+        return first_car.queue.qsize() + 1
+    else:
+        return 0
     
 def exp_time(avg):
     return random.expovariate(1.0/avg)
@@ -144,7 +150,7 @@ for i in range(1000):
     log.write('\nМашин:' + str(Car.counter) + '\n')
     log.write('Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()) + '\n')
     log.write('С учетом проехавших свободно ' + str(Car.get_avg_time_with_greens()) + '\n')
-    log.write('С учетом разгона и торможения ' + str(Car.get_avg_time_with_acceleration()) + '\n\n')
+    log.write('Средние затраты на проезд перекрестка (торможение, очередь и разгон) ' + str(Car.get_avg_time_with_acceleration()) + '\n\n')
     
     Crossroad.switch_time = Crossroad.phase_time()
 
