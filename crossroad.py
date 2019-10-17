@@ -6,30 +6,30 @@ import random
 def switch_phase():
 
     Crossroad.phase = not Crossroad.phase
-    Crossroad.switch_time = list.time + Crossroad.phase_time()
-    list.put(Crossroad.phase_time(), Event('Phase switch', phase_switch_handler))
+    Crossroad.switch_time = events_list.time + Crossroad.phase_time()
+    events_list.put(Crossroad.phase_time(), Event('Phase switch', phase_switch_handler))
     
     if Crossroad.is_green():
-        list.put(0, Event('Car go', car_go_handler))
+        events_list.put(0, Event('Car go', car_go_handler))
         log_event('Фаза переключилась на зеленый\n')
     else:
         log_event('Фаза переключилась на красный\n')
     
 def new_car():
 
-    list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
+    events_list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
     
     if first_car.busy:
-        first_car.queue.put(Car(list.time))
+        first_car.queue.put(Car(events_list.time))
         log_event('Машина встала в очередь')
     else:
         if not Crossroad.is_green():
             if first_car.busy:
-                first_car.queue.put(Car(list.time))
+                first_car.queue.put(Car(events_list.time))
                 log_event('Машина встала в очередь на красный')
             else:
                 first_car.act(Handler.TAKE)
-                first_car.car = Car(list.time)
+                first_car.car = Car(events_list.time)
                 log_event('Машина встала на красный')
         else:
             Car.count_green_car()
@@ -40,7 +40,7 @@ def car_go():
     if not first_car.busy:
         return
 
-    t = Crossroad.switch_time - list.time
+    t = Crossroad.switch_time - events_list.time
     
     if t < Car.acceleration_time:
         acceleration_distance = ((Car.speed/Car.acceleration_time) * (t ** 2))/ 2
@@ -57,9 +57,9 @@ def car_go():
     if not first_car.queue.empty():
         first_car.car = first_car.queue.get()
         
-        if Car.delay < (Crossroad.switch_time - list.time):
+        if Car.delay < (Crossroad.switch_time - events_list.time):
             first_car.distance_from_cross += Car.length
-            list.put(Car.delay, Event('Car go', car_go_handler))
+            events_list.put(Car.delay, Event('Car go', car_go_handler))
         else:
             first_car.distance_from_cross = 0
             
@@ -69,7 +69,7 @@ def car_go():
         log_event('Машина выехала. Сзади свободно')
   
 def log_event(text):
-    log.write(str(int(list.time)) + ': ' + text + '\n')
+    log.write(str(int(events_list.time)) + ': ' + text + '\n')
     
 def exp_time(avg):
     return random.expovariate(1.0/avg)
@@ -108,7 +108,7 @@ class Car:
         Car.green_counter += 1
         
     def count_car(self):
-        Car.sum_time += (list.time - self.time)
+        Car.sum_time += (events_list.time - self.time)
         Car.counter += 1
         
     def get_avg_queue_time():
@@ -135,11 +135,11 @@ for i in range(1000):
     new_car_handler = Handler(new_car)
     car_go_handler = Handler(car_go)
 
-    list = FutureEventsList((Crossroad.switch_time, Event('Phase switch', phase_switch_handler)))
-    list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
+    events_list = FutureEventsList((Crossroad.switch_time, Event('Phase switch', phase_switch_handler)))
+    events_list.put(exp_time(Handler.intensity), Event('New car', new_car_handler))
 
-    while list.time < 1000:
-        list.get().handler._function()
+    while events_list.time < 1000:
+        events_list.get().handler._function()
 
     log.write('\nМашин:' + str(Car.counter) + '\n')
     log.write('Среднее время нахождения машины в очереди равно ' + str(Car.get_avg_queue_time()) + '\n')
