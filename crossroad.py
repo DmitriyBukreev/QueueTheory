@@ -22,18 +22,13 @@ def new_car():
     if first_car.busy:
         first_car.queue.put(Car(events_list.time))
         log_event('Машина встала в очередь')
+    elif not Crossroad.is_green():
+        first_car.act(Handler.TAKE)
+        first_car.car = Car(events_list.time)
+        log_event('Машина встала на красный')
     else:
-        if not Crossroad.is_green():
-            if first_car.busy:
-                first_car.queue.put(Car(events_list.time))
-                log_event('Машина встала в очередь на красный')
-            else:
-                first_car.act(Handler.TAKE)
-                first_car.car = Car(events_list.time)
-                log_event('Машина встала на красный')
-        else:
-            stats.count_green_car()
-            log_event('Машина проехала свободно')
+        stats.count_green_car()
+        log_event('Машина проехала свободно')
 
 def car_go():
 
