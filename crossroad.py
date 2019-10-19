@@ -143,12 +143,13 @@ class Stats:
         return (self.sum_time + (2 * Car.acceleration_time * self.counter))/(self.counter + self.green_counter)
         
     def write_stats(self, file, direction):
-        file.write(f'{direction} проехало машин: {self.counter}\n')
+        file.write(f'{direction} проехало машин: {self.counter + self.green_counter}\n')
+        file.write(f'Из них стояло в очереди {self.counter}, а свободно проехало {self.green_counter}\n')
         file.write(f'Среднее время нахождения машины в очереди равно {self.get_avg_queue_time()}\n')
         file.write(f'С учетом проехавших свободно {self.get_avg_time_with_greens()}\n')
         file.write(f'Средние затраты на проезд перекрестка (торможение, очередь и разгон) {self.get_avg_time_with_acceleration()}\n\n')
 
-intensities = [('С севера', 1),('C запада', 2),('С юга', 3),('С востока', 4)]
+intensities = [('С севера', 3),('C запада', 3),('С юга', 6),('С востока', 6)]
 all_stats = []
 
 log = open('log.txt', 'w')
