@@ -73,7 +73,6 @@ class Stats:
     def __init__(self):
         self.arrived = [0,0]
         self.dropped = [0,0,0]
-        self.passed = [0,0]
         self.load_starts = [0.0, 0.0]
         self.load = [0.0, 0.0]
         self.time_counter = [0.0, 0.0]
@@ -81,6 +80,21 @@ class Stats:
         self.count_in_model = [0,0]
         self.count_counter = [0.0, 0.0]
         self.last_count_change_time = [0,0]
+
+    def add(self, some):
+        self.arrived[0] += some.arrived[0]
+        self.arrived[1] += some.arrived[1]
+        self.dropped[0] += some.self.dropped[0]
+        self.dropped[1] += some.self.dropped[1]
+        self.dropped[2] += some.self.dropped[2]
+        self.load[0] += some.load[0]
+        self.load[1] += some.load[1]
+        self.time_counter[0] += some.time_counter[0]
+        self.time_counter[1] += some.time_counter[1]
+        self.dropped_time_counter[0] += some.dropped_time_counter[0]
+        self.dropped_time_counter[1] += some.dropped_time_counter[1]
+        self.count_counter[0] += some.count_counter[0]
+        self.count_counter[1] += some.count_counter[1]
 
     def count_arrived(self, type):
         self.count_count(type)
@@ -110,8 +124,11 @@ class Stats:
     def count_count(self, type):
         self.count_counter[type] += self.count_in_model[type] * (events_list.time - self.last_count_change_time[type])
 
-    def write_stats(self, file):
-        file.write(f'\nВ модель поступило:\n')
+    def get_time(self, time, iterations):
+        return time * iterations
+
+    def write_stats(self, file, iterations):
+        file.write(f'\nЗа {iterations} итераций в модель поступило:\n')
         file.write(f'\t- {self.arrived[0]} заявок типа 1\n')
         file.write(f'\t- {self.arrived[1]} заявок типа 2\n')
         file.write(f'\t- {self.arrived[0] + self.arrived[1]} заявок всего\n')
@@ -121,16 +138,16 @@ class Stats:
         file.write(f'\t- {self.dropped[2]} заявок на входе очереди 3\n')
         file.write(f'\t- {self.dropped[0] + self.dropped[1] + self.dropped[2]} заявок всего\n')
         file.write(f'\nБыло загружено:\n')
-        file.write(f'\t- На {((self.load[0] / 180) * 100):2.2f}% устройство 1\n')
-        file.write(f'\t- На {((self.load[1] / 180) * 100):2.2f}% устройство 2\n')
+        file.write(f'\t- На {((self.load[0] / self.get_time(180, iterations)) * 100):2.2f}% устройство 1\n')
+        file.write(f'\t- На {((self.load[1] / self.get_time(180, iterations)) * 100):2.2f}% устройство 2\n')
         file.write(f'\nСреднее время обслуживания составило:\n')
         file.write(f'\t- {self.time_counter[0]/(self.arrived[0] - self.dropped[0]):2.2f} для заявок типа 1, {(self.time_counter[0] + self.dropped_time_counter[0])/self.arrived[0]:2.2f} c учетом сброшенных\n')
         file.write(f'\t- {self.time_counter[1]/(self.arrived[1] - self.dropped[1]):2.2f} для заявок типа 2, {(self.time_counter[1] + self.dropped_time_counter[1])/self.arrived[1]:2.2f} c учетом сброшенных\n')
         file.write(f'\t- {(self.time_counter[0] + self.time_counter[1])/(self.arrived[0] - self.dropped[0] + self.arrived[1] - self.dropped[1]):2.2f} для всех заявок, {(self.time_counter[0] + self.time_counter[1] + self.dropped_time_counter[0] + self.dropped_time_counter[1])/(self.arrived[0] + self.arrived[1]):2.2f} с учетом сброшенных\n')
         file.write(f'\nВ среднем в модели одновременно находилось:\n')
-        file.write(f'\t- {self.count_counter[0]/180:2.2f} заявок типа 1\n')
-        file.write(f'\t- {self.count_counter[1]/180:2.2f} заявок типа 2\n')
-        file.write(f'\t- {(self.count_counter[0] + self.count_counter[1])/180:2.2f} заявок всего\n')
+        file.write(f'\t- {self.count_counter[0]/self.get_time(180, iterations):2.2f} заявок типа 1\n')
+        file.write(f'\t- {self.count_counter[1]/self.get_time(180, iterations):2.2f} заявок типа 2\n')
+        file.write(f'\t- {(self.count_counter[0] + self.count_counter[1])/self.get_time(180, iterations):2.2f} заявок всего\n')
 
 class Transact:
     def __init__(self, time, type):
@@ -160,29 +177,33 @@ log = open('log1.txt', 'w')
 results = open('results1.txt', 'w')
 
 stats = Stats()
-resource_one = Resource('First resource')
-resource_one.which = 0
-resource_one.queues = (Queue(), Queue())
 
-queue_three = Queue()
+for i in range(1000):
 
-arrival_handler = Handler(arrival)
-release_one_handler = Handler(release_one)
-release_two_handler = Handler(release_two)
+    resource_one = Resource('First resource')
+    resource_one.which = 0
+    resource_one.queues = (Queue(), Queue())
 
-intensities = (10, 3, 1.8, 2)
+    queue_three = Queue()
 
-events_list = FutureEventsList((exp_time(intensities[0]), Event('Arrival one', arrival_handler)))
-events_list.put(exp_time(intensities[1]), Event('Arrival two', arrival_handler))
+    arrival_handler = Handler(arrival)
+    release_one_handler = Handler(release_one)
+    release_two_handler = Handler(release_two)
 
-while True:
-    event = events_list.get()
-    if events_list.time <= 180:
-        event.handler._function(event.name)
-    else:
-        break
+    intensities = (10, 3, 1.8, 2)
 
-stats.write_stats(results)
+    events_list = FutureEventsList((exp_time(intensities[0]), Event('Arrival one', arrival_handler)))
+    events_list.put(exp_time(intensities[1]), Event('Arrival two', arrival_handler))
+
+    while True:
+        event = events_list.get()
+        if events_list.time <= 180:
+            event.handler._function(event.name)
+        else:
+            break
+
+    stats.write_stats(log, i + 1)
+stats.write_stats(results, i + 1)
 
 log.close()
 results.close()
