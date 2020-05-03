@@ -147,7 +147,7 @@ class Stats:
         file.write(f'\nВ среднем в модели одновременно находилось:\n')
         file.write(f'\t- {self.count_counter[0]/self.get_time(180, iterations):2.2f} заявок типа 1\n')
         file.write(f'\t- {self.count_counter[1]/self.get_time(180, iterations):2.2f} заявок типа 2\n')
-        file.write(f'\t- {(self.count_counter[0] + self.count_counter[1])/self.get_time(180, iterations):2.2f} заявок всего\n')
+        file.write(f'\t- {(self.count_counter[0] + self.count_counter[1])/self.get_time(180, iterations):2.2f} заявок всего\n\n')
 
 class Transact:
     def __init__(self, time, type):
@@ -179,6 +179,7 @@ results = open('results1.txt', 'w')
 stats = Stats()
 
 for i in range(1000):
+    log.write(f'Итерация {i + 1}:\n')
 
     resource_one = Resource('First resource')
     resource_one.which = 0
