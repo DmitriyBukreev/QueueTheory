@@ -1,3 +1,2 @@
 __pycache__
-log.txt
-results.txt
+*.txt

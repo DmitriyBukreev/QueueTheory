@@ -1,11 +1,12 @@
 import heapq
 from queue import Queue
+import random
 
 class FutureEventsList:
     def __init__(self, first=None):
         self._events = [first]
         self._time = 0
-        
+
     @property
     def time(self):
         return self._time
@@ -80,11 +81,13 @@ class Model:
         self._parameters = parameters
         self._future_events_list = FutureEventsList(first_event)
         self._finish_func = None
-        
+
     def step():
         self._future_events_list.get()[1].handler.call(future_events_list)
-    
+
     def iteration():
         while self.finish_func() == True:
             self.step()
 
+def exp_time(avg):
+    return random.expovariate(1.0/avg)
