@@ -4,15 +4,21 @@ from queue import Queue
 
 def arrival(arrival_where):
     type = 0 if arrival_where[-1] == 'e' else 1;
+    qsize = q_size(type)
 
     if(resource_one.queues[0].empty() and resource_one.queues[1].empty()):
         resource_one.which = type
         events_list.put(exp_time(intensities[1]), Event('Release one', release_one_handler))
         log_event(f'Заявка типа {type + 1} заходит на устройство 1, занимая его', 0)
+        resource_one.queues[type].put(Transact(events_list.time, type))
     else:
-        log_event(f'Заявка типа {type + 1} пришла на устройство 1, а оно занято', q_size(type))
+        log_event(f'Заявка типа {type + 1} пришла на устройство 1, а оно занято', qsize)
+        if (qsize < 4):
+            resource_one.queues[type].put(Transact(events_list.time, type))
+            log_note('в очереди есть место, заявка встает в очередь', qsize + 1)
+        else:
+            log_note('в очереди нету места, заявка сбрасывается', -1)
 
-    resource_one.queues[type].put(Transact(events_list.time, type))
     events_list.put(exp_time(intensities[type]), Event(arrival_where, arrival_handler))
 
 def release_one(release_what):
@@ -32,12 +38,15 @@ def release_one(release_what):
 
     if(not queue_three.empty()):
         log_note('заявка пришла на устройство 2, а оно занято', queue_three.qsize() - 1)
+        if(queue_three.qsize() <= 6):
+            queue_three.put(transact)
+            log_note('в очереди есть место, заявка встает в очередь', queue_three.qsize() - 1)
+        else:
+            log_note('в очереди нету места, заявка сбрасывается', -1)
     else:
         events_list.put(exp_time(intensities[3]), Event('Release two', release_two_handler))
-        log_note('заявка заходит на устройство 2, занимая его', 0)
-
-    queue_three.put(transact)
-
+        log_note('покинувшая заявка заходит на устройство 2, занимая его', 0)
+        queue_three.put(transact)
 
 def release_two(release_what):
     queue_three.get()
@@ -46,7 +55,7 @@ def release_two(release_what):
         events_list.put(exp_time(intensities[3]), Event('Release two', release_two_handler))
         log_event('Заявка уходит с устройства 2, ee место занимает следующая', queue_three.qsize() - 1)
     else:
-        log_event('Заявка уходит с устройства 2', 0)
+        log_event('Заявка уходит с устройства 2 и покидает модель', 0)
 
 class Stats:
     def __init__(self):
@@ -62,11 +71,11 @@ class Transact:
 
 def log_event(text, q_size):
     log.write(f'Время {int(events_list.time):3} - событие: {text:60}')
-    log.write('\n' if (q_size < 0) else f' - заявок в этой очереди {q_size:2}\n')
+    log.write('\n' if (q_size < 0) else f' - заявок в этой очереди {q_size}\n')
 
 def log_note(text, q_size):
     log.write(f'\tПри этом {text:45}')
-    log.write('\n' if (q_size < 0) else f' - заявок в этой очереди {q_size:2}\n')
+    log.write('\n' if (q_size < 0) else f' - заявок в этой очереди {q_size}\n')
 
 def q_size(which):
     if (resource_one.queues[which].empty()):
