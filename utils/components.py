@@ -1,17 +1,20 @@
 import heapq
-from queue import Queue
 import random
+from typing import Callable
+
 
 class FutureEventsList:
     def __init__(self, first=None):
-        self._events = [first]
+        self._events = []
+        if first is not None:
+            self._events.append(first)
         self._time = 0
 
     @property
     def time(self):
         return self._time
 
-    def put(self, time: int, event):
+    def put(self, time: float, event):
         heapq.heappush(self._events, (self._time + time, event))
 
     def get(self):
@@ -20,74 +23,51 @@ class FutureEventsList:
         return event[1]
 
 
-class ResourceException(Exception):
-    def __init__(self, res):
-        message = f"Resource {res.name} is already {'busy' if res.busy else 'free'}"
-        super().__init__(message)
-
-
-class Resource:
-    def __init__(self, name: str, busy: bool = False):
+class Component:
+    def __init__(self, name: str, distribution_law):
         self._name = name
-        self._busy = busy
+        self._distribution_law = distribution_law
+        self.stats = {}
 
     @property
     def name(self):
         return self._name
 
+    def generate_event(self):
+        return self._distribution_law(), Event(f'От {self._name}', self)
+
+    def __call__(self, events_list):
+        pass
+
+
+class Resource(Component):
+    def __init__(self, name: str, distribution_law):
+        super().__init__(name, distribution_law)
+        self._name = name
+        self._transaction = None
+        self.stats['load'] = 0.0
+        self.stats['load_start'] = -1.0
+
     @property
+    def name(self):
+        return self._name
+
     def busy(self):
-        return self._busy
+        return self._transaction is not None
 
-    def act(self, action):
-        """ :param action: Handler.FREE or Handler.TAKE """
-        if action == self.busy:
-            raise ResourceException(self)
-        self._busy = action
-
-
-class Handler:
-    TAKE = True
-    FREE = False
-
-    def __init__(self, func, args_list = []):
-        self._function = func
-        self._args_list = args_list
-
-    def _take_resource(resource, transact, queue = None):
-        if resource.busy:
-            if queue:
-                queue.put(transact)
-            else:
-                return transact
-        else:
-            resource.act(TAKE)
-
-    def __call__(self, future_events_list):
-        self._function(future_events_list, self._args_list)
+    def setBusy(self, transaction):
+        self._transaction = transaction
 
 
 class Event:
-    def __init__(self, name: str, handler: Handler):
+    def __init__(self, name: str, handler: Callable):
         self.name = name
         self.handler = handler
 
 
-class Model:
-    def __init__(self, queues, resources, handlers, parameters, first_event, finish_func):
-        self._queues = queues
-        self._resources = resources
-        self._handlers = handlers
-        self._parameters = parameters
-        self._future_events_list = FutureEventsList(first_event)
-        self._finish_func = None
+class ExponentialDistribution:
+    def __init__(self, avg):
+        self._avg = avg
 
-    def step():
-        self._future_events_list.get()[1].handler.call(future_events_list)
-
-    def iteration():
-        while self.finish_func() == True:
-            self.step()
-
-def exp_time(avg):
-    return random.expovariate(1.0/avg)
+    def __call__(self):
+        return random.expovariate(1.0/self._avg)
