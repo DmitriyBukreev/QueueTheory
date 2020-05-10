@@ -9,7 +9,7 @@ def arrival(arrival_where):
 
     if(resource_one.queues[0].empty() and resource_one.queues[1].empty()):
         resource_one.which = type
-        events_list.put(exp_time(intensities[1]), Event('Release one', release_one_handler))
+        events_list.put(exp_time(intensities[2]), Event('Release one', release_one_handler))
         log_event(f'Заявка типа {type + 1} заходит на устройство 1, занимая его', 0)
         resource_one.queues[type].put(Transact(events_list.time, type))
         stats.start_load(0)
@@ -178,7 +178,7 @@ results = open('results1.txt', 'w')
 
 stats = Stats()
 
-for i in range(1000):
+for i in range(10000):
     log.write(f'Итерация {i + 1}:\n')
 
     resource_one = Resource('First resource')
